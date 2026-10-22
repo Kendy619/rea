@@ -40,6 +40,9 @@ helpers, so run them from a location that resolves the REA checkout's
 | `state-transitions.mjs`   | Static `mode:phase` transition graph of the 219 table entries from REA pseudocode and from `sb` instructions in the ELF, cross-checked and bounded by table sizes.         |
 | `switch-cases.mjs`        | Tabulate pseudocode `switch` statements by case value (state writes, constants, calls, gotos, enclosing conditions).                                                       |
 | `to-reversa-evidence.mjs` | Convert an `ask-rea.mjs` export (`round7-questions.json`) into the reversa project's `god-hand-ghidra-focused-v1` evidence folder, checking every listing against the ELF. |
+| `export-subsystem.mjs`    | One-session export of the enemy subsystem (table entries, tick, selectors, named families, plus their direct callees) in the `ask-rea.mjs` answer shape.                   |
+| `jump-tables.mjs`         | Read MIPS switch jump tables from an REA listing and the ELF; explore each case target through both branch sides and record reachable `mode:phase` stores with addresses.  |
+| `wsl-mcp/`                | Launcher and Windows-path proxy that expose REA's MCP server to Claude Code and Codex on Windows ([setup](wsl-mcp/README.md)).                                             |
 | `decomp_calls.py`         | Independent oracle: direct calls in the decomp's matched C, from source and `symbol_addrs.txt` only.                                                                       |
 | `compare-calls.mjs`       | Compare REA `procedure_callees` with that oracle.                                                                                                                          |
 

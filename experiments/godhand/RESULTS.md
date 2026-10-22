@@ -165,6 +165,28 @@ plus `to-reversa-evidence.mjs` produced its evidence layout for 17 functions:
 checked against the ELF. The first 1,200 instructions of `0x208be0` are
 identical to that project's own truncated export.
 
+**Machine-level reaction selection.** `jump-tables.mjs` recognised all 18
+indirect jumps in `func_0020A178` and the 8 in its sub-selectors.
+
+- 8 of the 18 in `func_0020A178` are switches on `+0x46`. The table bases,
+  bounds and biases come from the instructions and the targets from the ELF.
+- Table `0x00430e20` (at `0x0020b054`) sends `0x03`, `0x04`, `0x2d`, `0x32`
+  and `0x34` to one target. That is the guard-break set the parallel project
+  documented.
+- Exploring both sides of each branch (depth 10) gives reachable states with
+  their store addresses. Some cases reach a single state:
+  - `0x09`/`0x1c`/`0x30`/`0x52` → `1:8`;
+  - `0x0d` → `1:4`, `0x55` → `1:3`, `0x2e` → `1:17`, `0x53` → `1:10`,
+    `0x54` → `1:19`.
+- Reaction `7` (the jab) reaches `1:0`, the state that project observed at
+  runtime, and in other branches `1:8`, `1:1` or `1:19`. Conditions are
+  recorded, not evaluated.
+
+**Bulk export.** `export-subsystem.mjs` exported 777 functions in one session:
+412 roots plus their direct callees. It took 4:47, 1.15 GB peak, and 108 MB
+of MCP responses. The conversion gave 131,837 instructions, nothing
+truncated, with every `jal` checked.
+
 **Animation.** `moveMotion` (no decomp C) advances by
 `+0x444 × +0x440 × DAT_00747a14`, halving the global scale when
 `DAT_00747a09 == 1`. 32 code sites in 23 functions read the scale and 21 sites

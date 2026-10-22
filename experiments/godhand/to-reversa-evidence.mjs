@@ -47,8 +47,10 @@ const value = (id) => {
     throw new Error(`${id}: ${a ? a.answer.error : "missing"}`);
   return a.answer.value;
 };
-const decompiled = answers.find((a) => a.tool === "batch_decompile").answer
-  .value.items;
+// One or more batch_decompile answers (export-subsystem.mjs writes chunks).
+const decompiled = answers
+  .filter((a) => a.tool === "batch_decompile")
+  .flatMap((a) => a.answer.value.items);
 
 // Ghidra listing text as the reversa exporter writes it: "mnemonic op1,op2".
 const listing = (text) => text.replace(/, /gu, ",");
