@@ -144,6 +144,27 @@ Three decomp placeholder seeds outside the tables (`0x100248`, `0x31de70`,
 `0x3b6818`) are listed under other placeholder names. It is not checked
 whether this also happens with the decomp seeds alone.
 
+**State transitions and reaction selection.** `state-transitions.mjs`
+compares constant `+0x2f4`/`+0x2f5` writes in REA pseudocode with `sb`
+instructions in the ELF over all 219 phases.
+
+- Of 221 merged edges, 185 come from both sources, 27 only from machine code
+  (writes through a variable in the pseudocode) and 9 only from pseudocode.
+  Five edges fall outside table bounds and are flagged.
+- The known `0x71 → 0:3` path is found at instruction `0x0023f204`.
+- No phase writes `1:0` or `1:7`. A whole-ELF scan of mode-1 writes points to
+  `func_0020A178`: REA shows it is called only by the enemy tick `0x208be0`
+  and is the only caller of four sub-selectors (`0x20dcf0`, `0x20e480`,
+  `0x20ef08`, `0x20da18`).
+- `switch-cases.mjs` tabulates their 9 + 6 switches on the hit record's
+  reaction id (`*(+0x698)+0x46`).
+
+**Export for the parallel reimplementation project.** `round7-questions.json`
+plus `to-reversa-evidence.mjs` produced its evidence layout for 17 functions:
+14,297 instructions with no truncation (`0x21a538`: 5,638), every `jal`
+checked against the ELF. The first 1,200 instructions of `0x208be0` are
+identical to that project's own truncated export.
+
 **Animation.** `moveMotion` (no decomp C) advances by
 `+0x444 × +0x440 × DAT_00747a14`, halving the global scale when
 `DAT_00747a09 == 1`. 32 code sites in 23 functions read the scale and 21 sites

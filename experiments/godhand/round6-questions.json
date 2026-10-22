@@ -1,0 +1,46 @@
+[
+  {
+    "id": "tick-callees",
+    "why": "which mode-1 writers the enemy tick calls directly",
+    "tool": "procedure_callees",
+    "args": { "procedure": "0x208be0" }
+  },
+  {
+    "id": "callers-20a178",
+    "why": "who runs the reaction selector",
+    "tool": "procedure_callers",
+    "args": { "procedure": "0x20a178" }
+  },
+  {
+    "id": "callers-20dcf0",
+    "why": "mode-1 writer next to the enemy tick",
+    "tool": "procedure_callers",
+    "args": { "procedure": "0x20dcf0" }
+  },
+  {
+    "id": "callers-20e480",
+    "why": "mode-1 writer next to the enemy tick",
+    "tool": "procedure_callers",
+    "args": { "procedure": "0x20e480" }
+  },
+  {
+    "id": "callers-20ef08",
+    "why": "mode-1 writer next to the enemy tick",
+    "tool": "procedure_callers",
+    "args": { "procedure": "0x20ef08" }
+  },
+  {
+    "id": "callers-20da18",
+    "why": "mode-1 writer next to the enemy tick",
+    "tool": "procedure_callers",
+    "args": { "procedure": "0x20da18" }
+  },
+  {
+    "id": "selectors",
+    "why": "bodies of the reaction selectors",
+    "tool": "batch_decompile",
+    "args": {
+      "addresses": ["0x20a178", "0x20dcf0", "0x20e480", "0x20ef08", "0x20da18"]
+    }
+  }
+]

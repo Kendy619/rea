@@ -1,0 +1,402 @@
+[
+  {
+    "id": "decompile",
+    "why": "full bodies for the reversa evidence export",
+    "tool": "batch_decompile",
+    "args": {
+      "addresses": [
+        "0x208be0",
+        "0x20a178",
+        "0x20dcf0",
+        "0x20e480",
+        "0x20ef08",
+        "0x20da18",
+        "0x20cac8",
+        "0x20d398",
+        "0x20cd00",
+        "0x20d140",
+        "0x20d138",
+        "0x20f3c0",
+        "0x24c0f0",
+        "0x25e600",
+        "0x20fbb8",
+        "0x21a538",
+        "0x292dc8"
+      ]
+    }
+  },
+  {
+    "id": "info-0x208be0",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x208be0"
+    }
+  },
+  {
+    "id": "instructions-0x208be0",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x208be0"
+    }
+  },
+  {
+    "id": "incoming-0x208be0",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x208be0",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20a178",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20a178"
+    }
+  },
+  {
+    "id": "instructions-0x20a178",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20a178"
+    }
+  },
+  {
+    "id": "incoming-0x20a178",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20a178",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20dcf0",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20dcf0"
+    }
+  },
+  {
+    "id": "instructions-0x20dcf0",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20dcf0"
+    }
+  },
+  {
+    "id": "incoming-0x20dcf0",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20dcf0",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20e480",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20e480"
+    }
+  },
+  {
+    "id": "instructions-0x20e480",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20e480"
+    }
+  },
+  {
+    "id": "incoming-0x20e480",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20e480",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20ef08",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20ef08"
+    }
+  },
+  {
+    "id": "instructions-0x20ef08",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20ef08"
+    }
+  },
+  {
+    "id": "incoming-0x20ef08",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20ef08",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20da18",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20da18"
+    }
+  },
+  {
+    "id": "instructions-0x20da18",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20da18"
+    }
+  },
+  {
+    "id": "incoming-0x20da18",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20da18",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20cac8",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20cac8"
+    }
+  },
+  {
+    "id": "instructions-0x20cac8",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20cac8"
+    }
+  },
+  {
+    "id": "incoming-0x20cac8",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20cac8",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20d398",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20d398"
+    }
+  },
+  {
+    "id": "instructions-0x20d398",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20d398"
+    }
+  },
+  {
+    "id": "incoming-0x20d398",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20d398",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20cd00",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20cd00"
+    }
+  },
+  {
+    "id": "instructions-0x20cd00",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20cd00"
+    }
+  },
+  {
+    "id": "incoming-0x20cd00",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20cd00",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20d140",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20d140"
+    }
+  },
+  {
+    "id": "instructions-0x20d140",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20d140"
+    }
+  },
+  {
+    "id": "incoming-0x20d140",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20d140",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20d138",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20d138"
+    }
+  },
+  {
+    "id": "instructions-0x20d138",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20d138"
+    }
+  },
+  {
+    "id": "incoming-0x20d138",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20d138",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20f3c0",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20f3c0"
+    }
+  },
+  {
+    "id": "instructions-0x20f3c0",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20f3c0"
+    }
+  },
+  {
+    "id": "incoming-0x20f3c0",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20f3c0",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x24c0f0",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x24c0f0"
+    }
+  },
+  {
+    "id": "instructions-0x24c0f0",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x24c0f0"
+    }
+  },
+  {
+    "id": "incoming-0x24c0f0",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x24c0f0",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x25e600",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x25e600"
+    }
+  },
+  {
+    "id": "instructions-0x25e600",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x25e600"
+    }
+  },
+  {
+    "id": "incoming-0x25e600",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x25e600",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x20fbb8",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x20fbb8"
+    }
+  },
+  {
+    "id": "instructions-0x20fbb8",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x20fbb8"
+    }
+  },
+  {
+    "id": "incoming-0x20fbb8",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x20fbb8",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x21a538",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x21a538"
+    }
+  },
+  {
+    "id": "instructions-0x21a538",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x21a538"
+    }
+  },
+  {
+    "id": "incoming-0x21a538",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x21a538",
+      "direction": "incoming"
+    }
+  },
+  {
+    "id": "info-0x292dc8",
+    "tool": "procedure_info",
+    "args": {
+      "procedure": "0x292dc8"
+    }
+  },
+  {
+    "id": "instructions-0x292dc8",
+    "tool": "read_function_instructions",
+    "args": {
+      "procedure": "0x292dc8"
+    }
+  },
+  {
+    "id": "incoming-0x292dc8",
+    "tool": "procedure_references",
+    "args": {
+      "procedure": "0x292dc8",
+      "direction": "incoming"
+    }
+  }
+]
