@@ -5,6 +5,8 @@ firmware. It advances the generic-MIPS portion of
 [#718](https://github.com/morluto/rea/issues/718), not the whole firmware roadmap.
 PSP/Allegrex has a [separate static-ELF profile](ghidra-psp.md) tracked in
 [#1330](https://github.com/morluto/rea/issues/1330).
+PS2 Emotion Engine (R5900) executables have their own
+[static-ELF profile](ghidra-ps2.md).
 
 ## Admission boundary
 
