@@ -1,0 +1,22 @@
+[
+  {
+    "id": "mode-dispatchers",
+    "why": "method group before the behaviour tables: 0x24c0f0 uses the second table, 0x25e600 unknown, 0x25fcf8 is the last second-table entry",
+    "tool": "batch_decompile",
+    "args": { "addresses": ["0x24c0f0", "0x25e600", "0x25fcf8"] }
+  },
+  {
+    "id": "method-group-refs",
+    "why": "who selects among the per-mode dispatchers",
+    "tool": "xrefs",
+    "args": { "address": "0x3bf198" },
+    "containing": true
+  },
+  {
+    "id": "method-group-refs-2",
+    "why": "same group, alternate base",
+    "tool": "xrefs",
+    "args": { "address": "0x3bf1a0" },
+    "containing": true
+  }
+]

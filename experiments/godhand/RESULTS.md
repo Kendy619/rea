@@ -78,13 +78,48 @@ Type 3 uses a shape at `+0x180` and helpers `func_00137670` and
 `func_00136A88`; a capsule or cylinder is a hypothesis.
 
 **Enemy behavior.** `cEm00_hitReaction` has no code or data references in
-Ghidra. The ELF bytes contain its address once, at `0x3bf77c`, inside a table of
-218 `{short delta = 0, short index = -1, pfn}` entries starting at `0x3bf1c8`.
-That is the GCC 2.x pointer-to-member layout, so this is a `cEm00` method
-table. `hitReaction` is entry 182; 206 of the 218 entries still have only `func_`
-names in the decomp. `cEm00_hitReaction` compares the value at `+0x564` with
-`0x260`–`0x266`. Ghidra does not type the table, so static call graphs miss
-this dispatch; an agent must search for the pointer bytes (`search_bytes`).
+Ghidra: it is reached only through untyped method tables. The ELF bytes
+contain its address once, at `0x3bf77c`. Rounds 3–5 (`ask-rea.mjs`) recovered
+the state machine around it:
+
+- `func_00208BE0` (the enemy tick that also calls `cDamageManage_CkHitStop`
+  and `cCollisionSolidManage_ChkHit`) selects a dispatcher by the mode byte
+  `+0x2f4` from a group of GCC 2.x pointers-to-member
+  (`{short delta, short index = -1, pfn}`) at `0x3bf198`.
+- Each dispatcher indexes its own table of the same layout by the sub-state
+  byte `+0x2f5`, resetting out-of-range values to 0; `+0x2f6` counts steps
+  inside a sub-state.
+
+| Mode    | Dispatcher                                                                                  | Table      | Entries |
+| ------- | ------------------------------------------------------------------------------------------- | ---------- | ------- |
+| 0 and 3 | `func_0020F3C0`: positioning around the player, difficulty and attacker throttling          | `0x3bf1c8` | 174     |
+| 1       | `func_0024C0F0`: drops held weapons and effects, then runs damage reactions                 | `0x3bf738` | 40      |
+| 2       | `func_0025E600`: same cleanup; its last entry turns the damage volume off and plays a sound | `0x3bf878` | 5       |
+
+`cEm00_hitReaction` is mode 1, entry 8. Named callees in the decompiled entries
+(`classify-behaviours.mjs`):
+
+- 14 mode-0 behaviors check `cEmManage_CkPlCatched`, 11 of them also `CkPlSorry`.
+- 4 mode-0 behaviors throw held objects.
+- 9 mode-1 reactions call `cHeatSys_AddHeatGage`.
+- 207 of the 219 entries have only `func_` names in the decomp.
+
+`+0x564` is the enemy type: the dispatcher and `cEm00_hitReaction` switch on
+values `0x205`–`0x27e`, and `cEm00_stepMotionByEmNo` uses it. This corrects
+an earlier reading as a damage ID.
+
+In mode 0 (inferred from pseudocode):
+
+- `+0x16d8` holds `cEmManage_countEmNearerPlayer` adjusted per enemy type.
+- On game levels 1 and 2 it drives a 150-unit timer (`+0x175c`, advanced by
+  the speed rate) that starts a 90-unit cooldown (`+0x1760`).
+- Every eighth frame (`(+0x17d0 ^ frame) & 7`) an enemy picks one of 3, 5 or 7
+  slots around the player depending on the level, checks line of sight
+  (`ChkLine`) and updates its approach target.
+
+Ghidra types none of these tables, so static call graphs miss the dispatch;
+an agent has to find them through `search_bytes` or the dispatchers'
+`xrefs`.
 
 **Animation.** `moveMotion` (no decomp C) advances by
 `+0x444 × +0x440 × DAT_00747a14`, halving the global scale when
@@ -110,6 +145,10 @@ Round 1 (`investigate-godhand.mjs`, seeded): 66 calls, 160 s total, of which
 Round 2 (`ask-rea.mjs`, run alongside the real PS2 verifier) made about 100
 calls: 4 `xrefs`, 1 `batch_decompile` and 93 `resolve_containing_procedure`,
 each of the latter about 5.6 KB. Total 171 s, 1.1 GB peak.
+
+Rounds 3–5 (`ask-rea.mjs`) each paid the ~150–235 s analysis again, because
+every round is a new session. Decompiling all 218 table entries took five
+`batch_decompile` calls of 44 functions: 25 s and 1.8 MB of responses.
 
 Observations for REA, not specific to PS2:
 

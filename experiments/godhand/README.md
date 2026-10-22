@@ -33,6 +33,8 @@ helpers, so run them from a location that resolves the REA checkout's
 | `validate-godhand.mjs`    | Identity, function-start recovery, names, objdiff sizes and raw-JAL call sites versus REA through MCP, then snapshot reopen.        |
 | `investigate-godhand.mjs` | One MCP session asking fixed questions about damage, collision, enemy and animation code; records time and response bytes per call. |
 | `ask-rea.mjs`             | Run a JSON list of follow-up MCP queries in one session (optionally resolving returned addresses to their procedures).              |
+| `behaviour-features.mjs`  | Named callees per decompiled entry from an `ask-rea.mjs` answer file.                                                               |
+| `classify-behaviours.mjs` | Tag the enemy behavior-table entries (grab, throw, heat, camera, attack...) per mode table.                                         |
 | `decomp_calls.py`         | Independent oracle: direct calls in the decomp's matched C, from source and `symbol_addrs.txt` only.                                |
 | `compare-calls.mjs`       | Compare REA `procedure_callees` with that oracle.                                                                                   |
 
@@ -41,7 +43,9 @@ python3 seeds.py "$DECOMP/config/symbol_addrs.txt" "$OUT/godhand-seeds.tsv"
 export REA_GHIDRA_SEED_FILE="$OUT/godhand-seeds.tsv"   # omit for an unseeded run
 node validate-godhand.mjs "$ELF" "$DECOMP" "$OUT/validation.json"
 node investigate-godhand.mjs "$ELF" "$OUT/investigation"
-node ask-rea.mjs "$ELF" round2-questions.json "$OUT/investigation/round2.json"
+node ask-rea.mjs "$ELF" round2-questions.json "$OUT/investigation/round2.json"  # also round3..5
+node behaviour-features.mjs "$OUT/investigation/round3.json" > "$OUT/features.json"
+node classify-behaviours.mjs "$OUT/features.json"
 python3 decomp_calls.py "$DECOMP" <function names...> > "$OUT/decomp-calls.json"
 node compare-calls.mjs "$OUT/investigation" "$OUT/decomp-calls.json" "$DECOMP/config/symbol_addrs.txt"
 ```

@@ -1,0 +1,21 @@
+[
+  {
+    "id": "dispatcher",
+    "why": "func_0020F3C0 is the only user of the cEm00 behaviour table",
+    "tool": "batch_decompile",
+    "args": { "addresses": ["0x20f3c0"] }
+  },
+  {
+    "id": "dispatcher-callers",
+    "why": "who runs the behaviour dispatcher",
+    "tool": "procedure_callers",
+    "args": { "procedure": "0x20f3c0" }
+  },
+  {
+    "id": "dispatcher-xrefs",
+    "why": "data references (vtables) to the dispatcher",
+    "tool": "xrefs",
+    "args": { "address": "0x20f3c0" },
+    "containing": true
+  }
+]
