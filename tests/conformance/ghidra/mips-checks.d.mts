@@ -10,8 +10,13 @@ export type MipsReadelfMetadata = MipsElfMetadata & {
   readonly abiFlags: MipsAbiFlags;
   readonly gnuAttributes: MipsGnuAttributes | null;
 };
+/** An inspected record, or its inspected absence (`null`). */
+export type MipsInspectedReadelfMetadata = MipsElfMetadata & {
+  readonly abiFlags: MipsAbiFlags | null;
+  readonly gnuAttributes: MipsGnuAttributes | null;
+};
 export function expectedMipsElfProfile(
-  mips: MipsReadelfMetadata,
+  mips: MipsInspectedReadelfMetadata,
 ): Readonly<Record<string, JsonValue>>;
 
 export type MipsFloatAbi = "hard" | "soft";

@@ -30,6 +30,12 @@ import {
   assertPspProbe,
 } from "../tests/conformance/ghidra/psp-fixture.mjs";
 import {
+  buildPs2Fixture,
+  assertPs2LoadedImage,
+  assertPs2Probe,
+  PS2_VARIANTS,
+} from "../tests/conformance/ghidra/ps2-fixture.mjs";
+import {
   requireMcpToolError,
   requireMcpOperationResult,
 } from "./lib/mcp-verifier-results.mjs";
@@ -38,12 +44,18 @@ import { createVerifierRun, completeVerifierRun } from "./lib/verifier-run.mjs";
 // Optional cross-target lane. No tool acquisition and no target execution.
 const mode = process.argv[2];
 const psp = mode === "--psp" || mode === "--psp-missing-extension";
-const missingExtension = mode === "--psp-missing-extension";
-if (process.argv.length > 3 || (mode !== undefined && !psp))
+const ps2 = mode === "--ps2" || mode === "--ps2-missing-extension";
+const missingExtension =
+  mode === "--psp-missing-extension" || mode === "--ps2-missing-extension";
+if (process.argv.length > 3 || (mode !== undefined && !psp && !ps2))
   throw new Error(
-    "Usage: node scripts/verify-real-ghidra-mips.mjs [--psp|--psp-missing-extension]",
+    "Usage: node scripts/verify-real-ghidra-mips.mjs [--psp|--psp-missing-extension|--ps2|--ps2-missing-extension]",
   );
-const prefix = psp ? "rea_psp" : "rea_mips";
+const prefix = psp ? "rea_psp" : ps2 ? "rea_ps2" : "rea_mips";
+const extensionRefusal = ps2
+  ? /PS2_EXTENSION_UNAVAILABLE/u
+  : /PSP_EXTENSION_UNAVAILABLE/u;
+const markerText = `${prefix.replace("_", "-")}-source-owned-fixture\0`;
 if (!["linux", "darwin"].includes(process.platform))
   throw new Error(
     "MIPS verification requires a supported Linux/macOS Ghidra host",
@@ -135,7 +147,7 @@ function assertIncompleteMipsInspection(error) {
 const reports = [];
 let primaryFailure;
 try {
-  if (!psp) {
+  if (!psp && !ps2) {
     // Recordless legacy admission: ABI field 0, no ABI flags record, pinned
     // 32-bit language. Independent GNU readelf checks the header interpretation.
     for (const byteOrder of ["little", "big"]) {
@@ -286,20 +298,28 @@ try {
       });
     }
   }
-  for (const [byteOrder, floatAbi] of psp
+  for (const [byteOrder, floatAbi, variant] of psp
     ? [["little", "hard"]]
-    : [
-        ["little", "hard"],
-        ["big", "hard"],
-        ["little", "soft"],
-        ["big", "soft"],
-      ]) {
+    : ps2
+      ? [
+          ["little", "hard", "ps2sdk"],
+          ["little", "hard", "legacy"],
+        ]
+      : [
+          ["little", "hard"],
+          ["big", "hard"],
+          ["little", "soft"],
+          ["big", "soft"],
+        ]) {
     const fixture = psp
       ? await buildPspFixture(workspace)
-      : await buildMipsFixture(workspace, byteOrder, floatAbi);
-    const independent = psp
-      ? fixture
-      : await inspectMipsReadelf(fixture.path, byteOrder, floatAbi);
+      : ps2
+        ? await buildPs2Fixture(workspace, variant)
+        : await buildMipsFixture(workspace, byteOrder, floatAbi);
+    const independent =
+      psp || ps2
+        ? fixture
+        : await inspectMipsReadelf(fixture.path, byteOrder, floatAbi);
     const resolved = await parseBinaryTarget(fixture.path);
     if (!resolved.ok) throw resolved.error;
     if (psp) {
@@ -308,6 +328,13 @@ try {
         resolved.value.mips,
         independent.mips,
         "REA PSP ELF/ABI interpretation disagrees with GNU readelf and raw ABI bytes",
+      );
+    } else if (ps2) {
+      assert.equal(resolved.value.mips.flags, PS2_VARIANTS[variant].flags);
+      assert.deepEqual(
+        resolved.value.mips,
+        independent.mips,
+        "REA PS2 ELF/ABI interpretation disagrees with GNU readelf and raw ABI bytes",
       );
     } else {
       assert.deepEqual(
@@ -319,7 +346,7 @@ try {
     assert.equal(resolved.value.sha256, fixture.sha256);
     const snapshotPath = join(
       workspace,
-      `${byteOrder}-${floatAbi}.snapshot.json`,
+      `${byteOrder}-${variant ?? floatAbi}.snapshot.json`,
     );
     const transport = new StdioClientTransport({
       command: process.execPath,
@@ -350,7 +377,7 @@ try {
           { timeout: 60000 },
         );
         const error = requireMcpToolError(rejected);
-        assert.match(JSON.stringify(error), /PSP_EXTENSION_UNAVAILABLE/u);
+        assert.match(JSON.stringify(error), extensionRefusal);
         let cliError;
         try {
           await execute(
@@ -375,7 +402,7 @@ try {
         );
         assert.match(
           `${cliError.stdout}\n${cliError.stderr}`,
-          /PSP_EXTENSION_UNAVAILABLE/u,
+          extensionRefusal,
         );
         reports.push({
           path: fixture.path,
@@ -395,6 +422,7 @@ try {
       // observations still expose the actual Ghidra language and loaded bytes.
       const image = await call("inspect_native_load_image");
       if (psp) assertPspLoadedImage(image.observations, fixture.sha256);
+      else if (ps2) assertPs2LoadedImage(image.observations, fixture.sha256);
       else assertMipsLoadedImage(image.observations, byteOrder, fixture.sha256);
       const procedures = await call("list_procedures");
       const entry = procedures.find((p) => p.value === `${prefix}_entry`);
@@ -421,8 +449,19 @@ try {
       const branch = await call("inspect_native_instruction", {
         address: `0x${(BigInt(probe) + 4n).toString(16)}`,
       });
+      let ps2Instructions;
       if (psp) assertPspProbe(move, branch);
-      else assertMipsProbe(move, branch, byteOrder, probe);
+      else if (ps2) {
+        // MIPS ADDIU, MMI PADDW/PCPYLD, R5900 MULT and VU0 macro VADD.xyzw.
+        ps2Instructions = [];
+        for (const expected of fixture.probe)
+          ps2Instructions.push(
+            await call("inspect_native_instruction", {
+              address: expected.address,
+            }),
+          );
+        assertPs2Probe(ps2Instructions, fixture.probe);
+      } else assertMipsProbe(move, branch, byteOrder, probe);
       const global = await call("read_bytes", {
         address: independent.symbols[`${prefix}_global`],
         length: 4,
@@ -431,20 +470,9 @@ try {
       assertMipsGlobal(global.bytes_hex, byteOrder);
       const marker = await call("read_bytes", {
         address: independent.symbols[`${prefix}_marker`],
-        length: Buffer.byteLength(
-          psp
-            ? "rea-psp-source-owned-fixture\0"
-            : "rea-mips-source-owned-fixture\0",
-        ),
+        length: Buffer.byteLength(markerText),
       });
-      assert.equal(
-        marker.bytes_hex,
-        Buffer.from(
-          psp
-            ? "rea-psp-source-owned-fixture\0"
-            : "rea-mips-source-owned-fixture\0",
-        ).toString("hex"),
-      );
+      assert.equal(marker.bytes_hex, Buffer.from(markerText).toString("hex"));
       const callees = await call("procedure_callees", {
         procedure: entry.address,
       });
@@ -452,6 +480,62 @@ try {
         callees.includes(leaf.address),
         "Expected direct call not recovered",
       );
+      let ps2References;
+      if (ps2) {
+        // Incoming relationships and string inventory through public operations.
+        const callers = await call("procedure_callers", {
+          procedure: leaf.address,
+        });
+        assert.ok(
+          callers.includes(entry.address),
+          "Expected caller of the leaf function not recovered",
+        );
+        const incoming = await call("xrefs", { address: leaf.address });
+        const entryStart = BigInt(entry.address);
+        assert.ok(
+          incoming.some(
+            (source) =>
+              BigInt(source) >= entryStart &&
+              BigInt(source) < entryStart + 0x100n,
+          ),
+          "Expected call-site reference from the entry function not recovered",
+        );
+        const globalXrefs = await call("xrefs", {
+          address: independent.symbols[`${prefix}_global`],
+        });
+        const strings = await call("search_strings", {
+          pattern: "^rea-ps2-source-owned-fixture$",
+          mode: "regex",
+          case_sensitive: true,
+        });
+        // The extension maps the EE RAM mirrors (uncached at 0x20000000,
+        // uncached-accelerated at 0x30100000) over the same bytes.
+        const markerAddress = BigInt(independent.symbols[`${prefix}_marker`]);
+        const mirrors = [
+          markerAddress,
+          markerAddress + 0x20000000n,
+          markerAddress + 0x30100000n,
+        ];
+        assert.ok(
+          strings.some((item) => BigInt(item.address) === markerAddress),
+          "Fixture marker string not found at its symbol address",
+        );
+        assert.ok(
+          strings.every(
+            (item) =>
+              item.value === "rea-ps2-source-owned-fixture" &&
+              mirrors.includes(BigInt(item.address)),
+          ),
+          "Marker string reported outside its address or EE RAM mirrors",
+        );
+        ps2References = {
+          callers,
+          leaf_xrefs: incoming,
+          global_xrefs: globalXrefs,
+          marker_strings: strings,
+          segments: await call("list_segments"),
+        };
+      }
       const softFloat =
         floatAbi === "soft"
           ? await verifySoftFloat(call, independent.symbols, byteOrder)
@@ -506,6 +590,30 @@ try {
         "Soft-float prototype outcome missing from, or unexpected in, retained Evidence",
       );
       assert.ok(snapshot.evidence_bundle.records.length > 0);
+      if (ps2) {
+        const parameters = snapshot.binding.analysis_profile.parameters;
+        assert.equal(parameters.language_id, "r5900:LE:32:default");
+        assert.equal(parameters.loader, "ElfLoader");
+        assert.equal(
+          parameters.mips_support_lane,
+          "ps2-ee-elf32-exec-r5900-v1",
+        );
+        assert.equal(
+          parameters.ps2_abi_declaration,
+          PS2_VARIANTS[variant].abiDeclaration,
+        );
+        assert.match(parameters.ps2_extension.sha256, /^[a-f0-9]{64}$/u);
+        const retained = JSON.stringify(snapshot.evidence_bundle.records);
+        assert.ok(
+          retained.includes("MMI and VU0 macro-mode"),
+          "PS2 limitations missing from retained Evidence",
+        );
+        assert.equal(
+          retained.includes("no MIPS ABI flags record"),
+          variant === "legacy",
+          "Recordless EABI64 limitation missing from, or unexpected in, Evidence",
+        );
+      }
       if (psp) {
         assert.equal(
           snapshot.binding.analysis_profile.parameters.language_id,
@@ -532,14 +640,16 @@ try {
       assert.deepEqual(await call("list_procedures"), procedures);
       await call("close_binary");
 
-      if (psp) {
+      if (psp || variant === "ps2sdk") {
         const alternate = join(workspace, "alternate");
         await mkdir(alternate);
-        const other = await buildPspFixture(alternate, 11);
+        const other = psp
+          ? await buildPspFixture(alternate, 11)
+          : await buildPs2Fixture(alternate, variant, 11);
         assert.notEqual(other.sha256, fixture.sha256);
         assert.equal(
-          other.symbols.rea_psp_global,
-          fixture.symbols.rea_psp_global,
+          other.symbols[`${prefix}_global`],
+          fixture.symbols[`${prefix}_global`],
           "Target-switch control must reuse the same global address",
         );
         for (const item of [fixture, other, fixture]) {
@@ -549,7 +659,7 @@ try {
           });
           assert.equal(selected.sha256, item.sha256);
           const word = await call("read_bytes", {
-            address: item.symbols.rea_psp_global,
+            address: item.symbols[`${prefix}_global`],
             length: 4,
           });
           const expected = Buffer.alloc(4);
@@ -607,9 +717,10 @@ try {
         "Analysis modified the source executable",
       );
       // This upstream carved-firmware proof is specific to the generic MIPS fixture.
-      // PSP keeps its independent Allegrex/A-B-A checks; carved PSP is not verified.
+      // PSP and PS2 keep their independent processor/A-B-A checks; carved
+      // PSP and PS2 images are not verified.
       let carved;
-      if (!psp) {
+      if (!psp && !ps2) {
         // A program-header ABI record survives carving, but GNU declarations in
         // uncaptured section headers remain unknown: both adapters must refuse.
         const read16 = (offset) =>
@@ -706,7 +817,11 @@ try {
           "fixed instruction bytes and immediate",
           psp
             ? "Allegrex BITREV decoding and A-B-A target identity"
-            : "conditional branch destination",
+            : ps2
+              ? `R5900 MMI/VU0 macro decoding, callers, xrefs and strings${
+                  variant === "ps2sdk" ? ", A-B-A target identity" : ""
+                }`
+              : "conditional branch destination",
           "global word and marker bytes",
           "CLI/MCP and snapshot identity",
           ...(floatAbi === "soft"
@@ -714,11 +829,21 @@ try {
             : []),
         ],
         ...(softFloat === undefined ? {} : { soft_float: softFloat }),
+        ...(ps2Instructions === undefined
+          ? {}
+          : {
+              ps2_instructions: ps2Instructions.map((instruction) => ({
+                address: instruction.address,
+                bytes: instruction.bytes,
+                mnemonic: instruction.mnemonic,
+              })),
+              ps2_references: ps2References,
+            }),
         procedures: procedures.length,
         carved: carved ?? {
           status: "not_run",
           reason:
-            "Carved-firmware verification covers generic MIPS fixtures; carved PSP coverage is not established.",
+            "Carved-firmware verification covers generic MIPS fixtures; carved PSP and PS2 coverage is not established.",
         },
         status: "passed",
       });
