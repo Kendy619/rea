@@ -123,6 +123,16 @@ RAM mirrors), Evidence limitations, snapshot reopening, and for the PS2SDK
 fixture an A-B-A target switch with different global contents at the same
 address. Cleanup must finish before success is reported.
 
+The build maps its directory out of debug information, including the PS2SDK
+libraries' link-time optimization units, so the output does not depend on where
+it is built. With ps2dev v2.0.0 the default build produced SHA-256
+`e312d08bf615af1dcfae47091109d2a64fa42fcebeec301762a0a7895b30e650`
+(`rea_ps2_fixture.elf`) and
+`dcc503dac0d30eef83fb7c43c448e9455a98b8bf66be0afffa3219a30337f787`
+(`rea_ps2_legacy.elf`) in two different directories. Other toolchain versions
+are expected to produce different bytes; the verifier derives its expectations
+from the build it inspects rather than from these digests.
+
 The first compatibility run used Ghidra **12.1.3**, extension **v2.1.38**
 (the release built for 12.1.3), ps2dev **v2.0.0** (GCC 15.2.0, binutils 2.45.1)
 and Temurin JDK 21 on Linux x64 (WSL2 Ubuntu 24.04). Carved PS2 images and
