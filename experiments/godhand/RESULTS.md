@@ -121,6 +121,29 @@ Ghidra types none of these tables, so static call graphs miss the dispatch;
 an agent has to find them through `search_bytes` or the dispatchers'
 `xrefs`.
 
+**Agent-ready enemy names.** `enemy-seeds.py` turns the map above into
+seeds:
+
+- labels `cEm00_ModeDispatchers` (`0x3bf1a0`) and
+  `cEm00_Mode{0,1,2}Behaviours`;
+- `cEm00_dispatchMode{0,1,2}`;
+- `cEm00_m<mode>_s<sub>` for the 207 entries that had only placeholders.
+
+These names state table positions, not behavior. `verify-enemy-seeds.mjs`
+passed in 3:19 (1.0 GB peak):
+
+- all 210 names appear in `list_procedures`;
+- `address_name` returns the 4 labels;
+- `search_procedures ^cEm00_m1_s` returns 36 entries (40 minus 4 decomp
+  names);
+- the decompiled `func_00208BE0` reads
+  `&cEm00_ModeDispatchers + (+0x2f4) * 8`, and `cEm00_dispatchMode1` bounds
+  `+0x2f5` by `0x27` before indexing `cEm00_Mode1Behaviours`.
+
+Three decomp placeholder seeds outside the tables (`0x100248`, `0x31de70`,
+`0x3b6818`) are listed under other placeholder names. It is not checked
+whether this also happens with the decomp seeds alone.
+
 **Animation.** `moveMotion` (no decomp C) advances by
 `+0x444 × +0x440 × DAT_00747a14`, halving the global scale when
 `DAT_00747a09 == 1`. 32 code sites in 23 functions read the scale and 21 sites
