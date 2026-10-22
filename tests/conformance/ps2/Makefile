@@ -7,7 +7,9 @@ EE_OBJS = main.o probe.o
 REA_PS2_GLOBAL ?= 7
 EE_OPTFLAGS = -O0
 EE_DBGINFOFLAGS = -g
-EE_CFLAGS = -fno-inline -fno-builtin -DREA_PS2_GLOBAL=$(REA_PS2_GLOBAL)
+EE_CFLAGS = -fno-inline -fno-builtin -ffile-prefix-map=$(CURDIR)=. -DREA_PS2_GLOBAL=$(REA_PS2_GLOBAL)
+# PS2SDK libraries are LTO objects; keep the link-time build directory out too.
+EE_LDFLAGS = -ffile-prefix-map=$(CURDIR)=.
 LEGACY_FLAGS = -mabi=eabi -mno-abicalls -G0 -O0 -ffreestanding -fno-inline -fno-builtin
 
 all: $(EE_BIN) rea_ps2_legacy.elf
