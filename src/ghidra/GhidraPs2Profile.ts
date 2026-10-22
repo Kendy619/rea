@@ -120,13 +120,17 @@ export const GHIDRA_PS2_LANGUAGE_ID = "r5900:LE:32:default";
 export const GHIDRA_PS2_COMPILER_SPEC_ID = "default";
 export const GHIDRA_PS2_LOADER = "ElfLoader";
 
-/** Propagated with every PS2 observation, including successful decompilation. */
+/**
+ * Propagated with every PS2 observation, including successful decompilation.
+ * Every response repeats them, so each states one fact briefly; the pinned
+ * language and extension identity are already Evidence parameters.
+ */
 export const GHIDRA_PS2_LIMITATIONS = [
-  "PS2 Emotion Engine analysis uses the caller-installed ghidra-emotionengine-reloaded extension (language r5900:LE:32:default). ELF declarations and selected instruction checks are not proof of runtime semantics.",
-  "MMI and VU0 macro-mode instructions are decoded by the extension; their decompiled form uses extension-defined operations and is not an execution oracle. VU0/VU1 microprograms, DMA, VIF, GIF and GS behavior are not analyzed.",
-  "This PS2 profile covers static Emotion Engine ELF32 ET_EXEC only. IOP modules (IRX), disc images, overlays loaded at runtime and PS2 emulation are outside this verified lane.",
-  "The extension's single R5900 compiler specification models 64-bit-register EABI/n32 argument passing; the ELF ABI declaration is retained but does not select a different calling convention.",
-  "The extension adds PS2 memory blocks that are not file content: hardware registers, VU0/VU1 memory, GS registers, IOP RAM, scratchpad, BIOS and byte-mapped main-RAM mirrors at 0x20000000 (uncached) and 0x30100000 (uncached accelerated). Searches can report the same file bytes at mirror addresses.",
+  "PS2 Emotion Engine analysis uses the caller-installed ghidra-emotionengine-reloaded extension; ELF declarations and selected instruction checks do not prove runtime semantics.",
+  "MMI and VU0 macro-mode instructions decompile to extension-defined operations, not an execution oracle; VU microprograms, DMA, VIF, GIF and GS are not analyzed.",
+  "Static EE ELF32 ET_EXEC only: IRX modules, disc images, runtime overlays and emulation are outside this lane.",
+  "One R5900 compiler specification (64-bit-register EABI/n32 arguments) applies whichever ABI the header declares.",
+  "Extension memory blocks (hardware, VU, GS, IOP RAM, scratchpad, BIOS, main-RAM mirrors at 0x20000000 and 0x30100000) are not file content; searches can repeat file bytes at mirrors.",
 ] as const;
 
 /** Extra Evidence for a legacy header without an ABI flags record. */
@@ -137,6 +141,6 @@ export const ghidraPs2Limitations = (
   target.architecture === "mips" &&
   target.mips.abiFlags === null
     ? [
-        "The EABI64 header has no MIPS ABI flags record in the completely examined declaration tables; register widths and the floating-point ABI are not declared by the file.",
+        "The EABI64 header has no MIPS ABI flags record (all declaration tables examined); the file does not declare register widths or the floating-point ABI.",
       ]
     : [];
