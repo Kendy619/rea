@@ -1,0 +1,45 @@
+[
+  {
+    "id": "hitreaction-refs",
+    "why": "cEm00_hitReaction has no static callers: find the dispatch table that points at it",
+    "tool": "xrefs",
+    "args": { "address": "0x254450" },
+    "containing": true
+  },
+  {
+    "id": "timescale-refs",
+    "why": "moveMotion scales animation by DAT_00747a14: who writes the global time scale",
+    "tool": "xrefs",
+    "args": { "address": "0x747a14" },
+    "containing": true
+  },
+  {
+    "id": "slowflag-refs",
+    "why": "DAT_00747a09 == 1 halves the time scale: who sets it",
+    "tool": "xrefs",
+    "args": { "address": "0x747a09" },
+    "containing": true
+  },
+  {
+    "id": "damage-manager-refs",
+    "why": "D_00574380 is the damage manager passed to cDamageManage_CkHitStop",
+    "tool": "xrefs",
+    "args": { "address": "0x574380" },
+    "containing": true
+  },
+  {
+    "id": "narrow-phase",
+    "why": "ChkHit dispatches by shape type to these helpers; AABB test first",
+    "tool": "batch_decompile",
+    "args": {
+      "addresses": [
+        "0x135250",
+        "0x134cb0",
+        "0x134e18",
+        "0x135040",
+        "cCollisionSolid_constructSphere",
+        "ModeDispatch_tickWithHitStop"
+      ]
+    }
+  }
+]
