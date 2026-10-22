@@ -69,6 +69,15 @@ import {
 } from "./GhidraPspProfile.js";
 import { ghidraPspExtensionSchema } from "./GhidraPspExtension.js";
 import {
+  GHIDRA_PS2_COMPILER_SPEC_ID,
+  GHIDRA_PS2_LANGUAGE_ID,
+  GHIDRA_PS2_LIMITATIONS,
+  GHIDRA_PS2_LOADER,
+  ghidraPs2Limitations,
+  isGhidraPs2Target,
+} from "./GhidraPs2Profile.js";
+import { ghidraPs2ExtensionSchema } from "./GhidraPs2Extension.js";
+import {
   GHIDRA_MIPS_SOFT_FLOAT_STORAGE,
   ghidraMipsSoftFloatFailure,
   ghidraMipsRelocatableLimitations,
@@ -162,6 +171,28 @@ export const createGhidraProviderClient = (input: {
         diagnostics: {
           reason:
             "Resolve the supported PSP profile and installed Allegrex extension before opening the session.",
+        },
+      }),
+    );
+  const ps2 = isGhidraPs2Target(target);
+  const ps2Extension = ps2
+    ? ghidraPs2ExtensionSchema.safeParse(
+        committedProfile.parameters.ps2_extension,
+      )
+    : null;
+  if (
+    ps2Extension !== null &&
+    (!ps2Extension.success ||
+      committedProfile.parameters.language_id !== GHIDRA_PS2_LANGUAGE_ID ||
+      committedProfile.parameters.compiler_spec_id !==
+        GHIDRA_PS2_COMPILER_SPEC_ID ||
+      committedProfile.parameters.loader !== GHIDRA_PS2_LOADER)
+  )
+    return err(
+      new ProviderAdapterError("ghidra", "open_binary", {
+        diagnostics: {
+          reason:
+            "Resolve the supported PS2 profile and installed Emotion Engine extension before opening the session.",
         },
       }),
     );
@@ -325,6 +356,7 @@ export const createGhidraProviderClient = (input: {
     ...ghidraMipsRelocatableLimitations(target),
     ...ghidraMipsSharedLimitations(target),
     ...ghidraRiscvLimitations(target),
+    ...ghidraPs2Limitations(target),
   ];
   const providerLimitations =
     installation.platform === "win32"
@@ -361,6 +393,9 @@ export const createGhidraProviderClient = (input: {
       ),
       ...(pspExtension?.success === true
         ? { pspExtension: pspExtension.data }
+        : {}),
+      ...(ps2Extension?.success === true
+        ? { ps2Extension: ps2Extension.data }
         : {}),
       ...(softFloat ? { mipsSoftFloat: true as const } : {}),
       ...(target.format === "dos-mz" ? { dosMz: true } : {}),
@@ -417,6 +452,12 @@ export const createGhidraProviderClient = (input: {
       ? {
           expectedLanguageId: "Allegrex:LE:32:default",
           expectedCompilerSpecId: "default",
+        }
+      : {}),
+    ...(ps2
+      ? {
+          expectedLanguageId: GHIDRA_PS2_LANGUAGE_ID,
+          expectedCompilerSpecId: GHIDRA_PS2_COMPILER_SPEC_ID,
         }
       : {}),
     ...(context === undefined ? {} : { runId: context.runId }),
@@ -504,6 +545,7 @@ export const createGhidraProviderClient = (input: {
     ...providerLimitations,
     ...targetLimitations,
     ...(psp ? GHIDRA_PSP_LIMITATIONS : []),
+    ...(ps2 ? GHIDRA_PS2_LIMITATIONS : []),
     ...softFloatLimitations,
     ...ghidraExtensionLimitations(extensions),
     ...seedLimitations,

@@ -35,6 +35,14 @@ import {
 } from "./GhidraPspProfile.js";
 import { resolveGhidraPspExtension } from "./GhidraPspExtension.js";
 import {
+  GHIDRA_PS2_COMPILER_SPEC_ID,
+  GHIDRA_PS2_LANGUAGE_ID,
+  GHIDRA_PS2_LOADER,
+  ghidraPs2AbiDeclaration,
+  isGhidraPs2Target,
+} from "./GhidraPs2Profile.js";
+import { resolveGhidraPs2Extension } from "./GhidraPs2Extension.js";
+import {
   NATIVE_AOT_MAX_REPORT_BYTES,
   NATIVE_AOT_MAX_SOURCE_BYTES,
   NATIVE_AOT_MAX_WORKING_MEMORY_BYTES,
@@ -103,6 +111,19 @@ export const resolveGhidraAnalysisProfile = async (
     ? await resolveGhidraPspExtension(installation, resources, signal)
     : null;
   if (pspExtension !== null && !pspExtension.ok) return pspExtension;
+  // The Emotion Engine language is pinned by this profile, like the PSP loader.
+  if (isGhidraPs2Target(target) && languageOverride !== undefined)
+    return err(
+      new AnalysisUnsupportedTargetError(
+        "resolve_analysis_profile",
+        target.path,
+        "The bounded PS2 Emotion Engine profile does not accept REA_GHIDRA_LANGUAGE_ID overrides.",
+      ),
+    );
+  const ps2Extension = isGhidraPs2Target(target)
+    ? await resolveGhidraPs2Extension(installation, resources, signal)
+    : null;
+  if (ps2Extension !== null && !ps2Extension.ok) return ps2Extension;
   const provider = { ...identity, version: installation.providerVersion };
   const analyzerParameters =
     disabledAnalyzers === undefined || disabledAnalyzers.length === 0
@@ -319,6 +340,16 @@ export const resolveGhidraAnalysisProfile = async (
               language_id: "Allegrex:LE:32:default",
               compiler_spec_id: "default",
               psp_extension: { ...pspExtension.value },
+            }
+          : {}),
+        ...(ps2Extension?.ok === true
+          ? {
+              mips_support_lane: "ps2-ee-elf32-exec-r5900-v1",
+              ps2_abi_declaration: ghidraPs2AbiDeclaration(target),
+              loader: GHIDRA_PS2_LOADER,
+              language_id: GHIDRA_PS2_LANGUAGE_ID,
+              compiler_spec_id: GHIDRA_PS2_COMPILER_SPEC_ID,
+              ps2_extension: { ...ps2Extension.value },
             }
           : {}),
       }),

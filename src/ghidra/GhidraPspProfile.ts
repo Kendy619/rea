@@ -6,6 +6,10 @@ import {
 } from "./GhidraMipsProfile.js";
 import { ghidraPowerPcUnsupportedReason } from "./GhidraPowerPcProfile.js";
 import { ghidraRiscvUnsupportedReason } from "./GhidraRiscvProfile.js";
+import {
+  ghidraPs2UnsupportedReason,
+  isGhidraPs2Target,
+} from "./GhidraPs2Profile.js";
 
 /** Allegrex's ELF machine declaration, not a filename or inferred instruction. */
 export const isGhidraPspTarget = (target: BinaryTarget): boolean =>
@@ -15,10 +19,11 @@ export const isGhidraPspTarget = (target: BinaryTarget): boolean =>
   target.mips !== undefined &&
   (target.mips.flags & 0x00ff0000) === 0x00a20000;
 
-/** PSP has its own verified interpretation; generic MIPS rules remain unchanged. */
+/** PSP and PS2 have their own verified interpretations; generic MIPS rules remain unchanged. */
 export const ghidraProcessorUnsupportedReason = (
   target: BinaryTarget,
 ): string | null => {
+  if (isGhidraPs2Target(target)) return ghidraPs2UnsupportedReason(target);
   if (target.kind === "executable" && target.architecture === "powerpc")
     return ghidraPowerPcUnsupportedReason(target);
   if (target.kind === "executable" && target.architecture === "riscv")

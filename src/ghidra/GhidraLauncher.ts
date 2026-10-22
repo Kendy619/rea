@@ -50,9 +50,23 @@ import {
 } from "./extensions/GhidraExtensions.js";
 
 import {
-  inspectGhidraPspExtension,
+  GHIDRA_PSP_EXTENSION_SPEC,
   type GhidraPspExtension,
 } from "./GhidraPspExtension.js";
+import {
+  GHIDRA_PS2_EXTENSION_SPEC,
+  type GhidraPs2Extension,
+} from "./GhidraPs2Extension.js";
+import {
+  inspectGhidraProcessorExtension,
+  type GhidraProcessorExtension,
+  type GhidraProcessorExtensionSpec,
+} from "./GhidraProcessorExtension.js";
+import {
+  GHIDRA_PS2_COMPILER_SPEC_ID,
+  GHIDRA_PS2_LANGUAGE_ID,
+  GHIDRA_PS2_LOADER,
+} from "./GhidraPs2Profile.js";
 
 /** Private paths and identity material for one headless Ghidra import. */
 export interface GhidraLaunchSession {
@@ -239,6 +253,7 @@ export interface GhidraHeadlessLauncherOptions {
   readonly analysisSeeds?: GhidraSeedCommitment;
   readonly analysisExtensions?: readonly GhidraExtension[];
   readonly pspExtension?: GhidraPspExtension;
+  readonly ps2Extension?: GhidraPs2Extension;
   /** Remap typed float storage for the soft-float o32 ABI after analysis. */
   readonly mipsSoftFloat?: true;
   /** Spawn seam for provider-boundary lifecycle tests. */
@@ -255,6 +270,45 @@ export class GhidraHeadlessLauncher implements GhidraLauncher {
       ...options,
       environment: snapshotEnvironment(options.environment, options.platform),
     };
+  }
+
+  /** Recheck resolved extension identity immediately before launch. */
+  private async verifyProcessorExtension(
+    spec: GhidraProcessorExtensionSpec,
+    extension: GhidraProcessorExtension,
+    options: {
+      readonly signal?: AbortSignal;
+      readonly resourceScope?: ArtifactResourceScope;
+    },
+  ): Promise<void> {
+    const installedRoot = await realpath(
+      join(
+        dirname(this.options.analyzeHeadlessPath),
+        "..",
+        "Ghidra",
+        "Extensions",
+        spec.id,
+      ),
+    );
+    if (installedRoot !== extension.root)
+      throw new GhidraLaunchError(
+        `${spec.label} profile does not belong to the selected Ghidra installation.`,
+      );
+    if (options.resourceScope === undefined)
+      throw new GhidraLaunchError(
+        `${spec.profile} inspection requires a caller-owned resource scope.`,
+      );
+    const inspected = await inspectGhidraProcessorExtension(
+      spec,
+      extension.root,
+      extension.ghidra_version,
+      options.resourceScope,
+      options.signal,
+    );
+    if (inspected.sha256 !== extension.sha256)
+      throw new GhidraLaunchError(
+        `Installed ${spec.label} content changed since profile resolution; reopen the target to resolve a fresh profile.`,
+      );
   }
 
   async launch(
@@ -281,35 +335,23 @@ export class GhidraHeadlessLauncher implements GhidraLauncher {
           "Ghidra configuration directory identity is unresolved; restore application.version and application.release.name in the selected installation's application.properties.",
         );
       const psp = this.options.pspExtension;
-      if (psp !== undefined) {
-        const installedRoot = await realpath(
-          join(
-            dirname(this.options.analyzeHeadlessPath),
-            "..",
-            "Ghidra",
-            "Extensions",
-            "ghidra-allegrex",
-          ),
+      const ps2 = this.options.ps2Extension;
+      if (psp !== undefined && ps2 !== undefined)
+        throw new GhidraLaunchError(
+          "A PSP and a PS2 processor extension cannot be combined in one import.",
         );
-        if (installedRoot !== psp.root)
-          throw new GhidraLaunchError(
-            "Allegrex profile does not belong to the selected Ghidra installation.",
-          );
-        if (options.resourceScope === undefined)
-          throw new GhidraLaunchError(
-            "PSP inspection requires a caller-owned resource scope.",
-          );
-        const inspected = await inspectGhidraPspExtension(
-          psp.root,
-          psp.ghidra_version,
-          options.resourceScope,
-          options.signal,
+      if (psp !== undefined)
+        await this.verifyProcessorExtension(
+          GHIDRA_PSP_EXTENSION_SPEC,
+          psp,
+          options,
         );
-        if (inspected.sha256 !== psp.sha256)
-          throw new GhidraLaunchError(
-            "Installed Allegrex content changed since profile resolution; reopen the target to resolve a fresh profile.",
-          );
-      }
+      if (ps2 !== undefined)
+        await this.verifyProcessorExtension(
+          GHIDRA_PS2_EXTENSION_SPEC,
+          ps2,
+          options,
+        );
       await createGhidraRuntimeDirectories(
         paths,
         platform,
@@ -364,6 +406,7 @@ export class GhidraHeadlessLauncher implements GhidraLauncher {
       const headlessArguments = ghidraHeadlessArguments({
         platform,
         ...(psp === undefined ? {} : { psp: true as const }),
+        ...(ps2 === undefined ? {} : { ps2: true as const }),
         ...(this.options.mipsSoftFloat === undefined
           ? {}
           : { mipsSoftFloat: this.options.mipsSoftFloat }),
@@ -680,6 +723,7 @@ export interface GhidraHeadlessArgumentOptions {
   readonly ghidraLogPath: string;
   readonly scriptLogPath: string;
   readonly psp?: true;
+  readonly ps2?: true;
   readonly mipsSoftFloat?: true;
   readonly dosMz?: true;
   readonly dosCom?: true;
@@ -706,6 +750,20 @@ export const ghidraHeadlessArguments = (
   const bridgeDirectory = scriptPath.dirname(options.bridgeScriptPath);
   const override = options.languageOverride;
   const rawBinary = options.rawBinary;
+  if (options.psp === true && options.ps2 === true)
+    throw new Error(
+      "A PSP ELF import cannot be combined with a PS2 ELF import.",
+    );
+  if (
+    options.ps2 === true &&
+    (options.dosMz === true ||
+      options.dosCom === true ||
+      override !== undefined ||
+      rawBinary !== undefined)
+  )
+    throw new Error(
+      "A PS2 ELF import cannot be combined with DOS, raw-binary or a generic Ghidra language override.",
+    );
   if (
     options.psp === true &&
     (options.dosMz === true ||
@@ -722,6 +780,7 @@ export const ghidraHeadlessArguments = (
   if (
     options.mipsSoftFloat === true &&
     (options.psp === true ||
+      options.ps2 === true ||
       options.dosMz === true ||
       options.dosCom === true ||
       rawBinary !== undefined)
@@ -782,15 +841,24 @@ export const ghidraHeadlessArguments = (
                 "-cspec",
                 "default",
               ]
-            : override !== undefined
+            : options.ps2 === true
               ? [
+                  "-loader",
+                  GHIDRA_PS2_LOADER,
                   "-processor",
-                  override.languageId,
-                  ...(override.compilerSpecId === undefined
-                    ? []
-                    : ["-cspec", override.compilerSpecId]),
+                  GHIDRA_PS2_LANGUAGE_ID,
+                  "-cspec",
+                  GHIDRA_PS2_COMPILER_SPEC_ID,
                 ]
-              : []
+              : override !== undefined
+                ? [
+                    "-processor",
+                    override.languageId,
+                    ...(override.compilerSpecId === undefined
+                      ? []
+                      : ["-cspec", override.compilerSpecId]),
+                  ]
+                : []
           : [
               "-loader",
               "BinaryLoader",

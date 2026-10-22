@@ -61,6 +61,7 @@ import {
   ghidraProcessorUnsupportedReason,
   isGhidraPspTarget,
 } from "./GhidraPspProfile.js";
+import { isGhidraPs2Target } from "./GhidraPs2Profile.js";
 import { resolveGhidraExtensions } from "./extensions/GhidraExtensions.js";
 import {
   CAPABILITIES,
@@ -245,12 +246,15 @@ export class GhidraProvider implements AnalysisProviderCandidate {
       };
     if (hostPlatform === "win32")
       return inspectWindowsP0TargetSupport(target, diagnostics);
+    const linuxX64 =
+      hostPlatform === "linux" &&
+      (this.installationHost?.architecture ?? process.arch) === "x64";
     const mipsReason =
-      isGhidraPspTarget(target) &&
-      (hostPlatform !== "linux" ||
-        (this.installationHost?.architecture ?? process.arch) !== "x64")
+      isGhidraPspTarget(target) && !linuxX64
         ? "The initial PSP Allegrex profile is verified on Linux x64 only."
-        : ghidraProcessorUnsupportedReason(target);
+        : isGhidraPs2Target(target) && !linuxX64
+          ? "The initial PS2 Emotion Engine profile is verified on Linux x64 only."
+          : ghidraProcessorUnsupportedReason(target);
     if (mipsReason !== null)
       return {
         status: "unsupported",
