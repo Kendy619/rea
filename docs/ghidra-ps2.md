@@ -135,8 +135,32 @@ from the build it inspects rather than from these digests.
 
 The first compatibility run used Ghidra **12.1.3**, extension **v2.1.38**
 (the release built for 12.1.3), ps2dev **v2.0.0** (GCC 15.2.0, binutils 2.45.1)
-and Temurin JDK 21 on Linux x64 (WSL2 Ubuntu 24.04). Carved PS2 images and
-commercial or legacy-SDK-produced executables were not verified; the legacy
-control reproduces their documented header shape, not their producer. These
-checks are selected static facts, not full behavioral equivalence, VU semantics
-or arbitrary PS2 compatibility.
+and Temurin JDK 21 on Linux x64 (WSL2 Ubuntu 24.04). Carved PS2 images were
+not verified. These checks are selected static facts, not full behavioral
+equivalence, VU semantics or arbitrary PS2 compatibility.
+
+The same setup was also run, outside the suite, on 11 EE executables from 7
+caller-owned discs (6 USA retail titles from 2003–2006 and one modified
+disc). No game data is part of the repository.
+
+- All 11 declare the legacy-SDK EABI64 shape (`0x20924000` or `0x20924001`)
+  with no ABI flags record, and are admitted.
+- All 7 boot executables were analyzed as `r5900:LE:32:default`, and their
+  entry functions decompiled.
+- One title was built with Metrowerks CodeWarrior. Ghidra recovered all of its
+  4,183 function names from the ELF symbol table, and its runtime overlay
+  sections stayed outside the image.
+- Two tasks hit REA's general MCP response budget (10 MiB) rather than a
+  profile limit:
+  - the complete string list of a 28,000-function title; `search_strings`
+    still works;
+  - `inspect_native_load_image` on the CodeWarrior title, which lists 56,477
+    relocations.
+
+For one title, the boot ELF's SHA-256 matches a public decompilation project,
+whose function list was supplied as `REA_GHIDRA_SEED_FILE`:
+
+- all of the project's function starts and named functions were found at
+  their addresses;
+- callers agreed with raw `jal` decoding;
+- the direct callees of functions with matched C agreed with that C.
